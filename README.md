@@ -1,5 +1,10 @@
 # 🚀 DRL-Based Adaptive Network Routing
 
+| | |
+|---|---|
+| [<img src="https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-blue?style=for-the-badge&logo=googledrive" />](https://drive.google.com/file/d/1cW3rZMu2IV5sggFjb7kgtAt0j03ZKNJk/view?usp=sharing) | [<img src="https://img.shields.io/badge/📄%20Read%20Report-Google%20Drive-red?style=for-the-badge&logo=googledrive" />](https://drive.google.com/file/d/1AcS7IC7UkeYSHoP3pxvBSipAFbelCCCo/view?usp=sharing) |
+
+
 **Authors:** Muhammad Sabeeh (23K-0002), Rayyan Merchant (23K-0073)
 
 A Deep Reinforcement Learning (DRL) system that dynamically routes network traffic using DQN and DDQN algorithms, built on **ns-3.35** + **ns3-gym** + **PyTorch**. The agent learns to minimize delay, packet loss, and maximize throughput — outperforming traditional Dijkstra routing.
@@ -108,129 +113,6 @@ pip install -e .
 # 8. Copy Python project
 cp -r "CN Project/" ~/drl_project/
 ```
-
----
-
-## 🎯 Quick Demo for Presentation
-
-### Option A: Show Pre-Computed Results (Fastest — 2 minutes)
-
-Everything is already trained and results are saved. Just show the existing outputs:
-
-```bash
-# Open WSL terminal
-wsl -d Ubuntu-22.04
-
-# 1. Show training health checks (5/5 PASS for both DQN and DDQN)
-cd ~/drl_project
-python3 training/health_check.py
-
-# 2. Show training logs
-echo "=== DQN Training Log (first + last 5 rows) ==="
-head -6 results/logs/dqn_training.csv
-echo "..."
-tail -5 results/logs/dqn_training.csv
-
-echo "=== DDQN Training Log ==="
-head -6 results/logs/ddqn_training.csv
-echo "..."
-tail -5 results/logs/ddqn_training.csv
-
-# 3. Show checkpoints
-ls -la results/checkpoints/
-
-# 4. Show baseline comparison
-cat results/logs/normal_comparison.csv
-cat results/logs/congested_comparison.csv
-cat results/logs/failure_comparison.csv
-```
-
-Then **open the PDF plots** in `results/plots/`:
-- `fig1_convergence.pdf` — DQN vs DDQN training convergence
-- `fig2_throughput.pdf` — Throughput comparison (Dijkstra vs DQN vs DDQN)
-- `fig5_recovery.pdf` — Link failure recovery
-
----
-
-### Option B: Live Baseline Demo (5 minutes)
-
-Run a live Dijkstra baseline simulation:
-
-```bash
-# Open WSL
-wsl -d Ubuntu-22.04
-cd ~/ns-allinone-3.35/ns-3.35
-
-# Run baseline (Normal scenario)
-./waf --run-no-build "drl_routing --enableRL=false --scenario=normal --simTime=100 --output=/tmp/demo_normal.xml"
-echo "✅ Simulation complete!"
-
-# Run baseline (Congested scenario)
-./waf --run-no-build "drl_routing --enableRL=false --scenario=congested --simTime=100 --output=/tmp/demo_congested.xml"
-echo "✅ Congested simulation complete!"
-
-# Run baseline (Failure scenario — R1-D1 fails at t=40s)
-./waf --run-no-build "drl_routing --enableRL=false --enableFail=true --scenario=normal --simTime=100 --output=/tmp/demo_failure.xml"
-echo "✅ Failure simulation complete!"
-
-# Parse results
-cd ~/drl_project
-python3 baseline/parse_flowmon.py /tmp/demo_normal.xml
-python3 baseline/parse_flowmon.py /tmp/demo_congested.xml
-python3 baseline/parse_flowmon.py /tmp/demo_failure.xml
-```
-
----
-
-### Option C: Live RL Training Demo (10 minutes)
-
-Show the DRL agent training live with a short run:
-
-**Terminal 1 — Start ns-3 simulator loop:**
-```bash
-wsl -d Ubuntu-22.04
-cd ~/ns-allinone-3.35/ns-3.35
-while true; do
-    ./waf --run-no-build "drl_routing --enableRL=true --simTime=100" 2>/dev/null
-    sleep 0.3
-done
-```
-
-**Terminal 2 — Run quick 10-episode DQN training:**
-```bash
-wsl -d Ubuntu-22.04
-cd ~/drl_project
-python3 -c "
-import sys, os, random, numpy as np
-sys.path.insert(0, '.')
-from agent.dqn_agent import DQNAgent
-from env.ns3_wrapper import NS3RoutingEnv
-from env.metrics import compute_reward
-from configs.hyperparams import STEPS_PER_EP, K_PATHS, BETA
-
-env = NS3RoutingEnv()
-agent = DQNAgent(device='cpu')
-
-for ep in range(10):
-    obs, _ = env.reset()
-    ep_cost = 0.0
-    for step in range(STEPS_PER_EP):
-        state = int(obs[0])
-        action = agent.act(state)
-        next_obs, _, done, _, _ = env.step(action)
-        reward = compute_reward(obs, action, K_PATHS, BETA)
-        agent.store(state, action, reward, int(next_obs[0]), float(done))
-        agent.train_step()
-        ep_cost += reward
-        obs = next_obs
-        if done: break
-    print(f'Episode {ep}: cost={ep_cost:.2f}, epsilon={agent.epsilon:.4f}')
-env.close()
-print('Live demo complete!')
-"
-```
-
-After the demo, **kill Terminal 1** with `Ctrl+C`.
 
 ---
 
